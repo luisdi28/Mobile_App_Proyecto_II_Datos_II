@@ -1,12 +1,15 @@
 package com.example.myapplication;
 
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,8 +34,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private BufferedReader input;
     private PrintWriter output;
 
-    private String SERVER_IP = "192.168.0.18"; // IP de la máquina  en la que Linux está instalado
-    private int SERVER_PORT = 8971; // Puerto en el que Linux está escuchando
+    private String SERVER_IP; // IP de la máquina  en la que Linux está instalado
+
+    private int SERVER_PORT; // Puerto en el que Linux está escuchando
+
+    Button boton_enviar;
+
+    EditText User_IP;
+
+    Intent go_on;
 
     private SensorManager sensorManager;
 
@@ -46,8 +56,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Obtener la referencia del TextView
-        textView3 = findViewById(R.id.textView3);
+        String message = "Conexión exitosa desde el dispositivo Android";
+
+        SERVER_PORT = 8971;
+
+        boton_enviar = findViewById(R.id.boton_enviar);
+        User_IP = findViewById(R.id.User_IP);
+        go_on = new Intent(getApplicationContext(), Controller.class);
+        boton_enviar.setOnClickListener(view -> {
+
+            SERVER_IP = User_IP.getText().toString();
+            if (isValidIPv4(SERVER_IP)) {
+                EnviarInfo(message);
+                go_on.putExtra("Server_IP", SERVER_IP);
+                startActivity(go_on);
+            } else {
+                NoValidIP();
+            }
+        });
 
         //Inicializamos el SensorManager
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -56,13 +82,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         accelerator = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         Refresh();
+    }
 
-        if (isValidIPv4((SERVER_IP))) {
+        /*if (isValidIPv4((SERVER_IP))) {
             EnviarInfo();
         } else {
             NoValidIP();
         }
-    }
+    }*/
 
     private boolean isValidIPv4(String server_ip) {
         Pattern pattern = Pattern.compile("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
@@ -73,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return matcher.matches();
     }
 
-    private void EnviarInfo() {
+    private void EnviarInfo(String message) {
         new Thread(() -> {
             try {
 
@@ -81,7 +108,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 output = new PrintWriter(socket.getOutputStream(), true);
 
-                String message = "Hola, soy el dispositivo Android, he enviado este mensaje ";
                 output.printf(message);
                 Log.d("ENVIADO", message);
 
@@ -173,8 +199,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         float x = event.values[0];
         float y = event.values[1];
         String message1 = String.format("x:");
-
-        textView3.setText((String.format("x:",x,y)));
 
     }
 
